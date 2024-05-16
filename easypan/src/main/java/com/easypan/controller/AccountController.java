@@ -6,7 +6,7 @@ import com.easypan.annotation.VerifyParam;
 import com.easypan.component.redis.RedisUtils;
 import com.easypan.constants.DateConstants;
 import com.easypan.constants.RedisKeyConstants;
-import com.easypan.entity.dto.CreateImageCode;
+import com.easypan.utils.CreateImageCode;
 import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.enums.VerifyRegexEnum;
 import com.easypan.entity.vo.ResponseVO;
@@ -32,12 +32,10 @@ public class AccountController extends ABaseController {
 
     @Resource
     private UserInfoService userInfoService;
-
     @Resource
     private EmailCodeService emailCodeService;
     @Resource
     private RedisUtils<String> redisUtils;
-
 
     @RequestMapping("/checkCode")
     public void checkCode(HttpServletResponse response, HttpSession session, Integer type) throws
@@ -97,13 +95,45 @@ public class AccountController extends ABaseController {
                                @VerifyParam(regex = VerifyRegexEnum.PASSWORD) String password,
                                @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode) {
         String codeImageKey = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId());
-        String codeImage = redisUtils.get(codeImageKey);
+        String codeImageRedis = redisUtils.get(codeImageKey);
         //  if not equal
-        if (!checkCode.equalsIgnoreCase(codeImage)) {
-            throw new BusinessException(MessageEnum.CODE_IMG_ERROR.getCn());
-        }
+        checkCodeImageThrowErrorMessage(checkCode,codeImageRedis);
         userInfoService.register(email, nickName, password, emailCode);
         return getSuccessResponseVO(null);
     }
 
+    /**
+     * 登录
+     * @param session       session
+     * @param email         email
+     * @param password      password
+     * @param checkCode     checkCode
+     * @return  ResponseVO
+     */
+    @RequestMapping("login")
+    @GlobalInterceptor(checkParams = true)
+    public ResponseVO login(HttpSession session,
+                            @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
+                            @VerifyParam(regex = VerifyRegexEnum.PASSWORD_MD5) String password,
+                            @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode) {
+        String codeImageKey = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId());
+        String codeImageRedis = redisUtils.get(codeImageKey);
+        checkCodeImageThrowErrorMessage(checkCode,codeImageRedis);
+        userInfoService.login(email, password);
+        return getSuccessResponseVO(null);
+    }
+
+    /**
+     * 检查图片验证码是否失效,失效则抛出异常
+     * @param codeImage 图片验证码
+     * @param codeRedis redis缓存验证码
+     */
+    private void checkCodeImageThrowErrorMessage(String codeImage, String codeRedis) {
+        if (codeRedis == null) {
+            throw new BusinessException(MessageEnum.CODE_IMAGE_INVALIDATED.getCn());
+        }
+        if(!codeImage.equals(codeRedis)){
+            throw new BusinessException(MessageEnum.CODE_IMG_ERROR.getCn());
+        }
+    }
 }

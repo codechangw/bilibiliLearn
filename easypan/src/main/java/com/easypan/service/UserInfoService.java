@@ -2,6 +2,7 @@ package com.easypan.service;
 
 import java.util.List;
 
+import com.easypan.entity.dto.SessionWebUserDto;
 import com.easypan.entity.query.UserInfoQuery;
 import com.easypan.entity.po.UserInfo;
 import com.easypan.entity.vo.PaginationResultVO;
@@ -123,6 +124,19 @@ public interface UserInfoService {
 	 */
 	Integer deleteUserInfoByQqOpenId(String qqOpenId);
 
+	/**
+	 * 注册
+	 * @param email		  email
+	 * @param nickName	  nickName
+	 * @param password	  pwd
+	 * @param emailCode	  code
+	 */
 	void register(String email,String nickName,String password,String emailCode);
 
+	/**
+	 * 登录
+	 * @param email 	 	email
+	 * @param password		pwd
+	 */
+	SessionWebUserDto login(String email, String password);
 }

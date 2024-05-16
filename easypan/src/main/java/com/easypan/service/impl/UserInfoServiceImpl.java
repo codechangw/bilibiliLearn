@@ -2,20 +2,20 @@ package com.easypan.service.impl;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import javax.annotation.Resource;
 
 import com.easypan.component.redis.RedisComponent;
+import com.easypan.entity.config.AdminAccountConfig;
 import com.easypan.constants.DateConstants;
-import com.easypan.constants.MessageConstants;
+import com.easypan.entity.dto.SessionWebUserDto;
 import com.easypan.entity.dto.SysSettingDto;
 import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.enums.UserStatusEnum;
-import com.easypan.entity.po.EmailCode;
-import com.easypan.entity.query.EmailCodeQuery;
 import com.easypan.exception.BusinessException;
-import com.easypan.mappers.EmailCodeMapper;
 import com.easypan.service.EmailCodeService;
+import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.stereotype.Service;
 
 import com.easypan.entity.enums.PageSize;
@@ -36,11 +36,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserInfoServiceImpl implements UserInfoService {
     @Resource
     private UserInfoMapper<UserInfo, UserInfoQuery> userInfoMapper;
-
     @Resource
-    EmailCodeService emailCodeService;
+    private EmailCodeService emailCodeService;
     @Resource
-    RedisComponent redisComponent;
+    private RedisComponent redisComponent;
+    @Resource
+    private AdminAccountConfig adminAccountConfig;
 
     /**
      * 根据UserId删除
@@ -219,6 +220,7 @@ public class UserInfoServiceImpl implements UserInfoService {
 
     /**
      * 注册
+     *
      * @param email     email
      * @param nickName  nickName
      * @param password  password
@@ -248,5 +250,38 @@ public class UserInfoServiceImpl implements UserInfoService {
         SysSettingDto sysSettingDto = redisComponent.getSysSettingDto();
         userInfo.setTotalSpace(sysSettingDto.getUserInitSpace() * DateConstants.MB);
         this.userInfoMapper.insert(userInfo);
+    }
+
+    @Override
+    public SessionWebUserDto login(String email, String password) {
+        UserInfo userInfo = userInfoMapper.selectByEmail(email);
+        //  账号不存在
+        if (userInfo == null) {
+            throw new BusinessException(MessageEnum.ACCOUNT_DOES_NOT_EXISTS.getCn());
+        }
+        //  密码错误
+        if (!Objects.equals(password, userInfo.getPassword())) {
+            throw new BusinessException(MessageEnum.WRONG_PASSWORD.getCn());
+        }
+        //  账号被禁用
+        if (userInfo.getStatus().equals(UserStatusEnum.DISABLE.getStatus())) {
+            throw new BusinessException(MessageEnum.ACCOUNT_DISABLED.getCn());
+        }
+        UserInfo userInfoUpdate = new UserInfo();
+        userInfoUpdate.setLastLoginTime(new Date());
+        userInfoMapper.updateByUserId(userInfoUpdate, userInfo.getUserId());
+        SessionWebUserDto sessionWebUserDto = new SessionWebUserDto();
+        sessionWebUserDto.setNickName(userInfo.getNickName());
+        sessionWebUserDto.setUserId(userInfo.getUserId());
+        if (userInfo.getQqAvatar() != null) {
+            sessionWebUserDto.setAvatar(userInfo.getQqAvatar());
+        }
+        if (ArrayUtils.contains(adminAccountConfig.getAdminEmail().split(","), userInfo.getEmail())) {
+            sessionWebUserDto.setIsAdmin(true);
+        } else {
+            sessionWebUserDto.setIsAdmin(false);
+        }
+
+        return null;
     }
 }

@@ -30,7 +30,10 @@ public enum MessageEnum {
     EMAIL_EXITS("email_exits","邮箱已存在","EMAIL_EXITS"),
     NICKNAME_EXITS("nickname_exits","昵称已存在","NICKNAME_EXITS"),
 
-
+    // 登录
+    ACCOUNT_DISABLED("account has bean disabled","账号已被禁用","ACCOUNT_DISABLED"),
+    ACCOUNT_DOES_NOT_EXISTS("Account does not exist","账号不存在","ACCOUNT_DOES_NOT_EXISTS"),
+    WRONG_PASSWORD("wrong password ","密码错误","WRONG_PASSWORD"),
 
     END("","","");
 

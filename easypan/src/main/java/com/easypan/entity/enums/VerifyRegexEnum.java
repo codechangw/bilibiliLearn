@@ -21,6 +21,7 @@ public enum VerifyRegexEnum {
     CHECK_CODE("^[2-9a-hj-km-np-zA-HJ-KM-NP-Z]{5,5}$","验证码"),
     CHECK_CODE_ENUM("^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{5,5}$","验证码"),
     PASSWORD("^(?=.*[0-9])(?=.*[a-zA-Z])[a-zA-Z0-9!@#$%^&*()\\\\s]{8,20}$","密码"),
+    PASSWORD_MD5("^[a-fA-F0-9]{32}$","密码MD5加密"),
     END("","");
     private String regex;
     private String desc;

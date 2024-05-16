@@ -2,7 +2,6 @@ package com.easypan.component.redis;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -22,8 +21,6 @@ public class RedisUtils<V> {
 
     @Resource
     private RedisTemplate<String, V> redisTemplate;
-
-
     /**
      * 删除缓存
      *

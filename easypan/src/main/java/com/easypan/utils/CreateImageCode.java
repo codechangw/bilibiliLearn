@@ -1,4 +1,4 @@
-package com.easypan.entity.dto;
+package com.easypan.utils;
 
 
 import com.easypan.constants.DateConstants;

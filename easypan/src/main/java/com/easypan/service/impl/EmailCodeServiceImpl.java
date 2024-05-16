@@ -11,7 +11,7 @@ import com.easypan.component.redis.RedisUtils;
 import com.easypan.constants.DateConstants;
 import com.easypan.constants.MessageConstants;
 import com.easypan.constants.RedisKeyConstants;
-import com.easypan.entity.config.AppConfig;
+import com.easypan.entity.config.EmailConfig;
 import com.easypan.entity.dto.SysSettingDto;
 import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.po.UserInfo;
@@ -53,7 +53,7 @@ public class EmailCodeServiceImpl implements EmailCodeService {
     @Resource
     private JavaMailSender javaMailSender;
     @Resource
-    private AppConfig appConfig;
+    private EmailConfig emailConfig;
     @Resource
     private RedisComponent redis;
     @Resource
@@ -177,10 +177,8 @@ public class EmailCodeServiceImpl implements EmailCodeService {
         String key = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_EMAIL_CODE, email);
         // 发送验证码
         sendEmailCode(email, code);
-        //  删除旧验证码
-        redisUtils.delete(key);
         //  新验证码存入redis     有效时间5分钟
-        redisUtils.set(key, code, DateConstants.LENGTH_5 * 60);
+        redisUtils.set(key, code, emailConfig.getEmailCodeValidTime() * 60);
     }
 
     /**
@@ -200,6 +198,8 @@ public class EmailCodeServiceImpl implements EmailCodeService {
         if (!code.equals(codeEmail)) {
             throw new BusinessException(MessageEnum.CODE_EMAIL_ERROR.getCn());
         }
+        //  注册成功,删除key
+        redisUtils.delete(codeEmailKey);
     }
 
     /**
@@ -212,7 +212,7 @@ public class EmailCodeServiceImpl implements EmailCodeService {
         try {
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message);
-            helper.setFrom(appConfig.sendUserName);
+            helper.setFrom(emailConfig.getSendUserName());
             helper.setTo(targetEmail);
 
             SysSettingDto sysSettingDto = redis.getSysSettingDto();

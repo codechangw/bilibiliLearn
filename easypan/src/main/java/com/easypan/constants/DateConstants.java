@@ -1,5 +1,6 @@
 package com.easypan.constants;
 
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * @author c.w
@@ -11,6 +12,8 @@ public class DateConstants {
     public static final Integer ZERO = 0;
     public static final Integer ONE = 1;
     public static final Integer LENGTH_1 = 1;
+    @Value("${email.code.valid.time}")
+    public static Integer LENGTH_EMAIL_VALID_TIME;
     public static final Float LENGTH_05 = 0.5F;
     public static final Integer LENGTH_5 = 5;
     public static final Integer LENGTH_10 = 10;

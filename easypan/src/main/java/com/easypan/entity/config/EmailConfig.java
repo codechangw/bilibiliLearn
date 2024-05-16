@@ -1,19 +1,23 @@
 package com.easypan.entity.config;
 
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * @className AppConfig 
+ * @className EmailConfig
  * @description  
  * @author c.w
  * @date 2024/05/08
 **/
 @Component("appConfig")
-public class AppConfig {
+@Getter
+public class EmailConfig {
     @Value("${spring.mail.username:}")
-    public String sendUserName;
+    private String sendUserName;
+    @Value("${email.code.valid.time:}")
+    private Integer emailCodeValidTime;
 }
 
 
