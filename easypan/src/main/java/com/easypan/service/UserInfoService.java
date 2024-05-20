@@ -139,4 +139,12 @@ public interface UserInfoService {
 	 * @param password		pwd
 	 */
 	SessionWebUserDto login(String email, String password);
+
+	/**
+	 * 修改密码
+	 * @param email		email
+	 * @param password	password
+	 * @param emailCode	emailCode
+	 */
+	void resetPassword(String email,String password,String emailCode);
 }

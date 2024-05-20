@@ -6,6 +6,7 @@ import com.easypan.annotation.VerifyParam;
 import com.easypan.component.redis.RedisUtils;
 import com.easypan.constants.DateConstants;
 import com.easypan.constants.RedisKeyConstants;
+import com.easypan.entity.dto.SessionWebUserDto;
 import com.easypan.utils.CreateImageCode;
 import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.enums.VerifyRegexEnum;
@@ -14,6 +15,8 @@ import com.easypan.exception.BusinessException;
 import com.easypan.service.EmailCodeService;
 import com.easypan.service.UserInfoService;
 import com.easypan.utils.StringTools;
+import org.apache.ibatis.jdbc.Null;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,26 +54,19 @@ public class AccountController extends ABaseController {
         if (type == null || type == 0) {
             redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId()), code, DateConstants.LENGTH_1 * 60);
         } else {
-            //  注册时发送邮箱验证码前的图片验证码
+            //  发送邮箱验证码前的图片验证码
             redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE_EMAIL, session.getId()), code, DateConstants.LENGTH_1 * 60);
         }
         v.write(response.getOutputStream());
     }
 
     @RequestMapping("sendEmailCode")
-    @GlobalInterceptor(checkParams = true)
+    @GlobalInterceptor
     public ResponseVO sendEmailCode(HttpSession session,
                                     @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
                                     @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode,
                                     Integer type) {
-        String key = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE_EMAIL, session.getId());
-        String redisCode = redisUtils.get(key);
-        if (redisCode.isEmpty()) {
-            throw new BusinessException(MessageEnum.CODE_INVALIDATED.getCn());
-        }
-        if (!checkCode.equalsIgnoreCase(redisCode)) {
-            throw new BusinessException(MessageEnum.CODE_IMG_ERROR.getCn());
-        }
+        checkCodeImageEmailThrowErrorMessage(checkCode, session);
         emailCodeService.sendEmailCode(email, type);
         return getSuccessResponseVO(null);
     }
@@ -87,52 +83,100 @@ public class AccountController extends ABaseController {
      * @return ResponseVO
      */
     @RequestMapping("register")
-    @GlobalInterceptor(checkParams = true)
+    @GlobalInterceptor
     public ResponseVO register(HttpSession session,
                                @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
                                @VerifyParam(regex = VerifyRegexEnum.NUMBER_5) String emailCode,
                                @VerifyParam(regex = VerifyRegexEnum.CHARACTER_NUMBER) String nickName,
                                @VerifyParam(regex = VerifyRegexEnum.PASSWORD) String password,
                                @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode) {
-        String codeImageKey = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId());
-        String codeImageRedis = redisUtils.get(codeImageKey);
-        //  if not equal
-        checkCodeImageThrowErrorMessage(checkCode,codeImageRedis);
+        checkCodeImageThrowErrorMessage(checkCode, session);
         userInfoService.register(email, nickName, password, emailCode);
         return getSuccessResponseVO(null);
     }
 
     /**
      * 登录
-     * @param session       session
-     * @param email         email
-     * @param password      password
-     * @param checkCode     checkCode
-     * @return  ResponseVO
+     *
+     * @param session   session
+     * @param email     email
+     * @param password  password
+     * @param checkCode checkCode
+     * @return ResponseVO
      */
     @RequestMapping("login")
-    @GlobalInterceptor(checkParams = true)
+    @GlobalInterceptor
     public ResponseVO login(HttpSession session,
                             @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
                             @VerifyParam(regex = VerifyRegexEnum.PASSWORD_MD5) String password,
                             @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode) {
-        String codeImageKey = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId());
-        String codeImageRedis = redisUtils.get(codeImageKey);
-        checkCodeImageThrowErrorMessage(checkCode,codeImageRedis);
-        userInfoService.login(email, password);
+        checkCodeImageThrowErrorMessage(checkCode, session);
+        SessionWebUserDto sessionWebUserDto = userInfoService.login(email, password);
+        return getSuccessResponseVO(sessionWebUserDto);
+    }
+
+    /**
+     * 忘记密码
+     *
+     * @param session   session
+     * @param email     email
+     * @param emailCode emailCode
+     * @param password  password
+     * @param checkCode checkCode
+     * @return ResponseVO
+     */
+    @RequestMapping("resetPwd")
+    @GlobalInterceptor
+    public ResponseVO resetPwd(HttpSession session,
+                               @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
+                               @VerifyParam(regex = VerifyRegexEnum.NUMBER_5) String emailCode,
+                               @VerifyParam(regex = VerifyRegexEnum.PASSWORD) String password,
+                               @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode) {
+        checkCodeImageThrowErrorMessage(checkCode, session);
+        userInfoService.resetPassword(email, password, emailCode);
+        return getSuccessResponseVO(null);
+    }
+
+    @RequestMapping("getAvatar/{userId}")
+    public ResponseVO getAvatar(HttpSession session, @VerifyParam @PathVariable String userId) {
+        return getSuccessResponseVO(null);
+    }
+
+    /**
+     * 登出
+     * @param session   session
+     * @return ResponseVO
+     */
+    @RequestMapping("logout")
+    public ResponseVO logout(HttpSession session) {
+        session.invalidate();
         return getSuccessResponseVO(null);
     }
 
     /**
      * 检查图片验证码是否失效,失效则抛出异常
+     *
      * @param codeImage 图片验证码
-     * @param codeRedis redis缓存验证码
+     * @param session   session
      */
-    private void checkCodeImageThrowErrorMessage(String codeImage, String codeRedis) {
-        if (codeRedis == null) {
+    private void checkCodeImageEmailThrowErrorMessage(String codeImage, HttpSession session) {
+        String key = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE_EMAIL, session.getId());
+        String redisCode = redisUtils.get(key);
+        if (redisCode == null || redisCode.length() != DateConstants.LENGTH_5) {
+            throw new BusinessException(MessageEnum.CODE_EMAIL_ERROR.getCn());
+        }
+        if (!codeImage.equalsIgnoreCase(redisCode)) {
+            throw new BusinessException(MessageEnum.CODE_IMG_ERROR.getCn());
+        }
+    }
+
+    private void checkCodeImageThrowErrorMessage(String codeImage, HttpSession session) {
+        String codeImageKey = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId());
+        String codeImageRedis = redisUtils.get(codeImageKey);
+        if (codeImageRedis == null || codeImageRedis.length() != DateConstants.LENGTH_5) {
             throw new BusinessException(MessageEnum.CODE_IMAGE_INVALIDATED.getCn());
         }
-        if(!codeImage.equals(codeRedis)){
+        if (!codeImage.equals(codeImageRedis)) {
             throw new BusinessException(MessageEnum.CODE_IMG_ERROR.getCn());
         }
     }

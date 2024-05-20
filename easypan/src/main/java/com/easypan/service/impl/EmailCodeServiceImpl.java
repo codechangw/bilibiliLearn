@@ -9,7 +9,6 @@ import javax.mail.internet.MimeMessage;
 import com.easypan.component.redis.RedisComponent;
 import com.easypan.component.redis.RedisUtils;
 import com.easypan.constants.DateConstants;
-import com.easypan.constants.MessageConstants;
 import com.easypan.constants.RedisKeyConstants;
 import com.easypan.entity.config.EmailConfig;
 import com.easypan.entity.dto.SysSettingDto;
@@ -198,7 +197,7 @@ public class EmailCodeServiceImpl implements EmailCodeService {
         if (!code.equals(codeEmail)) {
             throw new BusinessException(MessageEnum.CODE_EMAIL_ERROR.getCn());
         }
-        //  注册成功,删除key
+        //  校验通过,删除key
         redisUtils.delete(codeEmailKey);
     }
 
@@ -221,8 +220,8 @@ public class EmailCodeServiceImpl implements EmailCodeService {
             helper.setSentDate(new Date());
             javaMailSender.send(message);
         } catch (Exception e) {
-            logger.info(MessageConstants.EMAIL_SEND_ERROR, e);
-            throw new BusinessException(MessageConstants.EMAIL_SEND_ERROR);
+            logger.info(MessageEnum.EMAIL_SEND_ERROR.getCode(), e);
+            throw new BusinessException(MessageEnum.EMAIL_SEND_ERROR.getCn());
         }
     }
 }

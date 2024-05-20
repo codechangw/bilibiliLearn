@@ -11,6 +11,7 @@ import com.easypan.entity.config.AdminAccountConfig;
 import com.easypan.constants.DateConstants;
 import com.easypan.entity.dto.SessionWebUserDto;
 import com.easypan.entity.dto.SysSettingDto;
+import com.easypan.entity.dto.UserSpaceDto;
 import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.enums.UserStatusEnum;
 import com.easypan.exception.BusinessException;
@@ -252,6 +253,13 @@ public class UserInfoServiceImpl implements UserInfoService {
         this.userInfoMapper.insert(userInfo);
     }
 
+    /**
+     * 登录
+     *
+     * @param email    email
+     * @param password pwd
+     * @return SessionWebUserDto
+     */
     @Override
     public SessionWebUserDto login(String email, String password) {
         UserInfo userInfo = userInfoMapper.selectByEmail(email);
@@ -281,7 +289,26 @@ public class UserInfoServiceImpl implements UserInfoService {
         } else {
             sessionWebUserDto.setIsAdmin(false);
         }
+        return sessionWebUserDto;
+    }
 
-        return null;
+    /**
+     * 忘记密码
+     *
+     * @param email     email
+     * @param password  password
+     * @param emailCode emailCode
+     */
+    @Override
+    public void resetPassword(String email, String password, String emailCode) {
+        emailCodeService.checkCode(email, emailCode);
+        UserInfo userInfo = userInfoMapper.selectByEmail(email);
+        if (userInfo == null) {
+            throw new BusinessException(MessageEnum.ACCOUNT_DOES_NOT_EXISTS.getCn());
+        }
+        UserInfo userInfoUpdatePwd = new UserInfo();
+        userInfoUpdatePwd.setUserId(userInfo.getUserId());
+        userInfoUpdatePwd.setPassword(StringTools.encodeMD5(password));
+        userInfoMapper.updateByUserId(userInfoUpdatePwd, userInfoUpdatePwd.getUserId());
     }
 }

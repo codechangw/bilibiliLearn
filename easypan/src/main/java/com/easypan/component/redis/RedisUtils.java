@@ -21,6 +21,7 @@ public class RedisUtils<V> {
 
     @Resource
     private RedisTemplate<String, V> redisTemplate;
+
     /**
      * 删除缓存
      *
@@ -78,6 +79,7 @@ public class RedisUtils<V> {
             return false;
         }
     }
+
 }
 
 

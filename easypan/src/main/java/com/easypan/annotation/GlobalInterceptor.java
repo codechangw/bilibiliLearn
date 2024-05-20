@@ -19,13 +19,13 @@ public @interface GlobalInterceptor {
      * 是否需要校验参数
      * @return
      */
-    boolean checkParams() default false;
+    boolean checkParams() default true;
 
     /**
      * 是否需要登录
      * @return
      */
-    boolean checkLogin() default false;
+    boolean checkLogin() default true;
 
 }
 
