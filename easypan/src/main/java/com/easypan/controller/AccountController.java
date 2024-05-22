@@ -5,6 +5,7 @@ import com.easypan.annotation.GlobalInterceptor;
 import com.easypan.annotation.VerifyParam;
 import com.easypan.component.redis.RedisUtils;
 import com.easypan.constants.DateConstants;
+import com.easypan.constants.OtherConstants;
 import com.easypan.constants.RedisKeyConstants;
 import com.easypan.entity.dto.SessionWebUserDto;
 import com.easypan.utils.CreateImageCode;
@@ -61,7 +62,7 @@ public class AccountController extends ABaseController {
     }
 
     @RequestMapping("sendEmailCode")
-    @GlobalInterceptor
+    @GlobalInterceptor(checkLogin = false)
     public ResponseVO sendEmailCode(HttpSession session,
                                     @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
                                     @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode,
@@ -83,7 +84,7 @@ public class AccountController extends ABaseController {
      * @return ResponseVO
      */
     @RequestMapping("register")
-    @GlobalInterceptor
+    @GlobalInterceptor(checkLogin = false)
     public ResponseVO register(HttpSession session,
                                @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
                                @VerifyParam(regex = VerifyRegexEnum.NUMBER_5) String emailCode,
@@ -105,13 +106,14 @@ public class AccountController extends ABaseController {
      * @return ResponseVO
      */
     @RequestMapping("login")
-    @GlobalInterceptor
+    @GlobalInterceptor(checkLogin = false)
     public ResponseVO login(HttpSession session,
                             @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
                             @VerifyParam(regex = VerifyRegexEnum.PASSWORD_MD5) String password,
                             @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode) {
         checkCodeImageThrowErrorMessage(checkCode, session);
         SessionWebUserDto sessionWebUserDto = userInfoService.login(email, password);
+        session.setAttribute(OtherConstants.SESSION_KEY,sessionWebUserDto);
         return getSuccessResponseVO(sessionWebUserDto);
     }
 
@@ -126,7 +128,7 @@ public class AccountController extends ABaseController {
      * @return ResponseVO
      */
     @RequestMapping("resetPwd")
-    @GlobalInterceptor
+    @GlobalInterceptor(checkLogin = false)
     public ResponseVO resetPwd(HttpSession session,
                                @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
                                @VerifyParam(regex = VerifyRegexEnum.NUMBER_5) String emailCode,

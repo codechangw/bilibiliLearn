@@ -3,7 +3,10 @@ package com.easypan.aspect;
 
 import com.easypan.annotation.GlobalInterceptor;
 import com.easypan.annotation.VerifyParam;
+import com.easypan.constants.OtherConstants;
+import com.easypan.entity.dto.SessionWebUserDto;
 import com.easypan.entity.enums.BasicDataTypesEnum;
+import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.enums.ResponseCodeEnum;
 import com.easypan.exception.BusinessException;
 import com.easypan.utils.StringTools;
@@ -42,6 +45,7 @@ public class OperationAspect {
 
     /**
      * 切点前
+     *
      * @param joinPoint 切点
      */
     @Before("requestInterceptor()")
@@ -62,7 +66,7 @@ public class OperationAspect {
                 return;
             }
             if (interceptor.checkLogin()) {
-                // TODO 登录校验
+                checkLogin();
             }
             //  校验参数
             if (interceptor.checkParams()) {
@@ -79,8 +83,9 @@ public class OperationAspect {
 
     /**
      * 校验参数列表
-     * @param method    方法
-     * @param params    参数
+     *
+     * @param method 方法
+     * @param params 参数
      */
     private void validateParams(Method method, Object[] params) {
         Parameter[] parameters = method.getParameters();
@@ -102,7 +107,8 @@ public class OperationAspect {
 
     /**
      * 校验   前提:verifyParam not null
-     * @param value 校验内容 (对象)
+     *
+     * @param value     校验内容 (对象)
      * @param parameter 参数 not null
      */
     private void checkValue(Object value, Parameter parameter) {
@@ -111,7 +117,8 @@ public class OperationAspect {
 
     /**
      * 校验   前提:verifyParam not null
-     * @param value 校验内容 (基础数据类型)
+     *
+     * @param value       校验内容 (基础数据类型)
      * @param verifyParam 注解 not null
      */
     private void checkValue(Object value, VerifyParam verifyParam) {
@@ -132,10 +139,16 @@ public class OperationAspect {
             }
         }
     }
-    public void checkLogin(){
+
+    public void checkLogin() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         HttpSession session = request.getSession();
-        //session.getAttribute();
+        SessionWebUserDto sessionWebUserDto = (SessionWebUserDto) session.getAttribute(OtherConstants.SESSION_KEY);
+        //  未登录
+        if (sessionWebUserDto == null) {
+            throw new BusinessException(ResponseCodeEnum.CODE_901);
+        }
+
     }
 }
 

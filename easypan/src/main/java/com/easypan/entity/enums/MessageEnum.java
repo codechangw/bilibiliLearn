@@ -34,7 +34,7 @@ public enum MessageEnum {
     ACCOUNT_DISABLED("account has bean disabled","账号已被禁用","ACCOUNT_DISABLED"),
     ACCOUNT_DOES_NOT_EXISTS("Account does not exist","账号不存在","ACCOUNT_DOES_NOT_EXISTS"),
     WRONG_PASSWORD("wrong password ","密码错误","WRONG_PASSWORD"),
-
+    NOT_LOGIN("not login","未登录","NOT_LOGIN"),
     END("","","");
 
     private final String en;
