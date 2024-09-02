@@ -8,6 +8,7 @@ import com.easypan.constants.DateConstants;
 import com.easypan.constants.OtherConstants;
 import com.easypan.constants.RedisKeyConstants;
 import com.easypan.entity.dto.SessionWebUserDto;
+import com.easypan.entity.dto.UserSpaceDto;
 import com.easypan.utils.CreateImageCode;
 import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.enums.VerifyRegexEnum;
@@ -16,7 +17,6 @@ import com.easypan.exception.BusinessException;
 import com.easypan.service.EmailCodeService;
 import com.easypan.service.UserInfoService;
 import com.easypan.utils.StringTools;
-import org.apache.ibatis.jdbc.Null;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -50,18 +50,18 @@ public class AccountController extends ABaseController {
         response.setDateHeader("Expires", 0);
         response.setContentType("image/jpeg");
         String code = v.getCode();
-        //  图片验证码有效时间1分钟
+        //  图片验证码有效时间1分钟 (本地测试暂时设置60分钟,方便使用)
         //  图片验证码
         if (type == null || type == 0) {
-            redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId()), code, DateConstants.LENGTH_1 * 60);
+            redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE, session.getId()), code, DateConstants.SECOND_HOUR);
         } else {
             //  发送邮箱验证码前的图片验证码
-            redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE_EMAIL, session.getId()), code, DateConstants.LENGTH_1 * 60);
+            redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_CODE_IMAGE_EMAIL, session.getId()), code, DateConstants.SECOND_HOUR);
         }
         v.write(response.getOutputStream());
     }
 
-    @RequestMapping("sendEmailCode")
+    @RequestMapping("/sendEmailCode")
     @GlobalInterceptor(checkLogin = false)
     public ResponseVO sendEmailCode(HttpSession session,
                                     @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
@@ -83,7 +83,7 @@ public class AccountController extends ABaseController {
      * @param checkCode checkCode
      * @return ResponseVO
      */
-    @RequestMapping("register")
+    @RequestMapping("/register")
     @GlobalInterceptor(checkLogin = false)
     public ResponseVO register(HttpSession session,
                                @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
@@ -105,7 +105,7 @@ public class AccountController extends ABaseController {
      * @param checkCode checkCode
      * @return ResponseVO
      */
-    @RequestMapping("login")
+    @RequestMapping("/login")
     @GlobalInterceptor(checkLogin = false)
     public ResponseVO login(HttpSession session,
                             @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
@@ -113,7 +113,7 @@ public class AccountController extends ABaseController {
                             @VerifyParam(regex = VerifyRegexEnum.CHECK_CODE) String checkCode) {
         checkCodeImageThrowErrorMessage(checkCode, session);
         SessionWebUserDto sessionWebUserDto = userInfoService.login(email, password);
-        session.setAttribute(OtherConstants.SESSION_KEY,sessionWebUserDto);
+        session.setAttribute(OtherConstants.SESSION_KEY, sessionWebUserDto);
         return getSuccessResponseVO(sessionWebUserDto);
     }
 
@@ -127,7 +127,7 @@ public class AccountController extends ABaseController {
      * @param checkCode checkCode
      * @return ResponseVO
      */
-    @RequestMapping("resetPwd")
+    @RequestMapping("/resetPwd")
     @GlobalInterceptor(checkLogin = false)
     public ResponseVO resetPwd(HttpSession session,
                                @VerifyParam(regex = VerifyRegexEnum.EMAIL) String email,
@@ -139,21 +139,37 @@ public class AccountController extends ABaseController {
         return getSuccessResponseVO(null);
     }
 
-    @RequestMapping("getAvatar/{userId}")
+    @RequestMapping("/getAvatar/{userId}")
     public ResponseVO getAvatar(HttpSession session, @VerifyParam @PathVariable String userId) {
         return getSuccessResponseVO(null);
     }
 
     /**
      * 登出
-     * @param session   session
+     *
+     * @param session session
      * @return ResponseVO
      */
-    @RequestMapping("logout")
+    @RequestMapping("/logout")
     public ResponseVO logout(HttpSession session) {
         session.invalidate();
         return getSuccessResponseVO(null);
     }
+
+    /**
+     * 获取使用空间
+     *
+     * @param session session
+     * @return ResponseVO
+     */
+    @RequestMapping("/getUseSpace")
+    @GlobalInterceptor
+    public ResponseVO getUseSpace(HttpSession session) {
+        String userId = getUserInfoFromSession(session).getUserId();
+        UserSpaceDto useSpace = userInfoService.getUseSpace(userId);
+        return getSuccessResponseVO(useSpace);
+    }
+
 
     /**
      * 检查图片验证码是否失效,失效则抛出异常

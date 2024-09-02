@@ -10,7 +10,7 @@ import com.easypan.component.redis.RedisComponent;
 import com.easypan.component.redis.RedisUtils;
 import com.easypan.constants.DateConstants;
 import com.easypan.constants.RedisKeyConstants;
-import com.easypan.entity.config.EmailConfig;
+import com.easypan.config.EmailConfig;
 import com.easypan.entity.dto.SysSettingDto;
 import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.po.UserInfo;

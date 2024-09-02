@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 /**
  * @author c.w
- * @className Constants
+ * @className DateConstants
  * @description
  * @date 2024/04/29
  **/
@@ -25,6 +25,21 @@ public class DateConstants {
     public static final String a_TO_z2 = "abcdefghjkmnpqrstuvwxyz";
     public static final String STR_1_TO_9 = "123456789";
     public static final String STR_2_TO_9 = "23456789";
+
+    /* 时间 开始 */
+    public static final Long SECOND_ONE = 1L;
+    public static final Long SECOND_HALF_MINUTE = 30L;
+    public static final Long SECOND_MINUTE = 60L;
+    public static final Long SECOND_HOUR = 60L * 60;
+    public static final Long SECOND_DAY = 60L * 60 * 24;
+    public static final Long MINUTE_ONE = 1L;
+    public static final Long MINUTE_HALF_HOUR = 30L;
+    public static final Long MINUTE_HOUR = 60L;
+    public static final Integer HOUR_ONE = 1;
+    public static final Integer HOUR_12 = 12;
+    public static final Integer HOUR_DAY = 24;
+    /* 时间 结束*/
 }
+
 
 

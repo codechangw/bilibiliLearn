@@ -59,6 +59,23 @@ public class RedisUtils<V> {
     }
 
     /**
+     * 普通缓存放入,永久时间
+     *
+     * @param key   键
+     * @param value 值
+     * @return true成功 false失败
+     */
+    public boolean setex(String key, V value) {
+        try {
+            redisTemplate.opsForValue().set(key, value);
+            return true;
+        } catch (Exception e) {
+            log.error("设置redisKey:{},value:{}失败", key, value);
+            return false;
+        }
+    }
+
+    /**
      * 普通缓存放入并设置时间
      *
      * @param key   键
@@ -79,7 +96,6 @@ public class RedisUtils<V> {
             return false;
         }
     }
-
 }
 
 

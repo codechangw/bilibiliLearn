@@ -592,6 +592,25 @@
         where email=#{email}
     </update>
 
+    <update id="updateUserSpace">
+        update user_info
+        <set>
+            <if test="addUseSpace != null">
+                use_space = use_space + #{addUseSpace}
+            </if>
+            <if test="addTotalSpace != null">
+                total_space = total_space + #{addTotalSpace}
+            </if>
+        </set>
+        where user_id = #{userId}
+        <if test="addUseSpace != null">
+            and <![CDATA[ ( use_space + #{addUseSpace} ) <= total_space ]]>
+        </if>
+        <if test="addTotalSpace != null">
+            and <![CDATA[ (total_space + #{addTotalSpace} ) >= use_space ]]>
+        </if>
+    </update>
+
     <!-- 根据Email删除-->
     <delete id="deleteByEmail">
         delete

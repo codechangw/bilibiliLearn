@@ -24,5 +24,4 @@ public interface FileInfoMapper<T,P> extends BaseMapper<T,P> {
 	 */
 	 T selectByFileIdAndUserId(@Param("fileId") String fileId,@Param("userId") String userId);
 
-
 }

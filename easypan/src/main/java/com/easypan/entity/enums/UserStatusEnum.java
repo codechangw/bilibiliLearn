@@ -2,6 +2,7 @@ package com.easypan.entity.enums;
 
 
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @className UserStatusEnum 
@@ -11,12 +12,28 @@ import lombok.Getter;
 **/
 @Getter
 public enum UserStatusEnum {
-    ENABLE(1),
-    DISABLE(0);
+
+    DISABLE(0, "禁用"),
+    ENABLE(1, "启用");
+
     private Integer status;
-    UserStatusEnum(int status) {
+    @Setter
+    private String desc;
+
+    UserStatusEnum(Integer status, String desc) {
         this.status = status;
+        this.desc = desc;
     }
+
+    public static UserStatusEnum getByStatus(Integer status) {
+        for (UserStatusEnum item : UserStatusEnum.values()) {
+            if (item.getStatus().equals(status)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
 }
 
 

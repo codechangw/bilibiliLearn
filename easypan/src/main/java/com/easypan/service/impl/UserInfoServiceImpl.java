@@ -1,5 +1,6 @@
 package com.easypan.service.impl;
 
+import java.io.File;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -7,7 +8,11 @@ import java.util.Objects;
 import javax.annotation.Resource;
 
 import com.easypan.component.redis.RedisComponent;
-import com.easypan.entity.config.AdminAccountConfig;
+import com.easypan.component.redis.RedisUtils;
+import com.easypan.config.AppConfig;
+import com.easypan.constants.OtherConstants;
+import com.easypan.constants.RedisKeyConstants;
+import com.easypan.config.AdminAccountConfig;
 import com.easypan.constants.DateConstants;
 import com.easypan.entity.dto.SessionWebUserDto;
 import com.easypan.entity.dto.SysSettingDto;
@@ -16,7 +21,10 @@ import com.easypan.entity.enums.MessageEnum;
 import com.easypan.entity.enums.UserStatusEnum;
 import com.easypan.exception.BusinessException;
 import com.easypan.service.EmailCodeService;
+import com.easypan.service.FileInfoService;
 import org.apache.commons.lang3.ArrayUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.easypan.entity.enums.PageSize;
@@ -40,9 +48,13 @@ public class UserInfoServiceImpl implements UserInfoService {
     @Resource
     private EmailCodeService emailCodeService;
     @Resource
+    private RedisUtils redisUtils;
+    @Resource
     private RedisComponent redisComponent;
     @Resource
     private AdminAccountConfig adminAccountConfig;
+    @Autowired
+    private AppConfig appConfig;
 
     /**
      * 根据UserId删除
@@ -238,7 +250,9 @@ public class UserInfoServiceImpl implements UserInfoService {
         if (nickNameUser != null) {
             throw new BusinessException(MessageEnum.NICKNAME_EXITS.getCn());
         }
+        //  校验邮箱验证码
         emailCodeService.checkCode(email, emailCode);
+        //  用户信息
         String userId = StringTools.getRandomNumber(DateConstants.LENGTH_10);
         userInfo = new UserInfo();
         userInfo.setUserId(userId);
@@ -247,10 +261,19 @@ public class UserInfoServiceImpl implements UserInfoService {
         userInfo.setPassword(StringTools.encodeMD5(password));
         userInfo.setJoinTime(new Date());
         userInfo.setStatus(UserStatusEnum.ENABLE.getStatus());
+        //  初始化用户空间
         userInfo.setUseSpace(0L);
         SysSettingDto sysSettingDto = redisComponent.getSysSettingDto();
         userInfo.setTotalSpace(sysSettingDto.getUserInitSpace() * DateConstants.MB);
+        //  初始化用户空间-redis
+        UserSpaceDto userSpaceDto = new UserSpaceDto();
+        userSpaceDto.setUseSpace(0L);
+        userSpaceDto.setTotalSpace(sysSettingDto.getUserInitSpace() * DateConstants.MB);
+        //  保存
         this.userInfoMapper.insert(userInfo);
+        redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_USER_SPACE, userId), userSpaceDto, DateConstants.SECOND_HOUR * 6);
+        //  异步创建用户目录
+        this.createUserFolder(userId);
     }
 
     /**
@@ -310,5 +333,52 @@ public class UserInfoServiceImpl implements UserInfoService {
         userInfoUpdatePwd.setUserId(userInfo.getUserId());
         userInfoUpdatePwd.setPassword(StringTools.encodeMD5(password));
         userInfoMapper.updateByUserId(userInfoUpdatePwd, userInfoUpdatePwd.getUserId());
+    }
+
+    /**
+     * 获取用户使用空间情况
+     * get from redis first;if result is null ,then select from mysql database
+     *
+     * @param userid
+     * @return
+     */
+    @Override
+    public UserSpaceDto getUseSpace(String userid) {
+        String redisKey = StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_USER_SPACE, userid);
+        UserSpaceDto userSpaceDto = (UserSpaceDto) redisUtils.get(redisKey);
+        if (userSpaceDto == null) {
+            userSpaceDto = new UserSpaceDto();
+            UserInfo userInfo = userInfoMapper.selectByUserId(userid);
+            userSpaceDto.setTotalSpace(userInfo.getTotalSpace());
+            userSpaceDto.setUseSpace(userInfo.getUseSpace());
+            //  6 hours expiration time
+            redisUtils.set(redisKey, userSpaceDto, DateConstants.SECOND_HOUR * 6);
+        }
+        return userSpaceDto;
+    }
+
+    /**
+     * 更新用户空间-MySQL
+     *
+     * @param userId
+     * @param addUseSpace
+     * @param addTotalSpace
+     * @return
+     */
+    @Override
+    public Integer updateUserSpace(String userId, Long addUseSpace, Long addTotalSpace) {
+        return userInfoMapper.updateUserSpace(userId, addUseSpace, addTotalSpace);
+    }
+
+    @Override
+    @Async
+    public void createUserFolder(String userId) {
+        String projectFolder = appConfig.getProjectFolder();
+        //  用户目录
+        String userFolderPath = projectFolder + OtherConstants.FILE_FOLDER_FILE + userId;
+        File userFolder = new File(userFolderPath);
+        if (!userFolder.exists()) {
+            userFolder.mkdirs();
+        }
     }
 }

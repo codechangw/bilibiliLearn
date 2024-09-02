@@ -1,5 +1,6 @@
 package com.easypan.utils;
 
+import com.easypan.constants.DateConstants;
 import com.easypan.exception.BusinessException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -51,12 +52,9 @@ public class StringTools {
     }
 
     public static boolean isEmpty(String str) {
-        if (null == str || "".equals(str) || "null".equals(str) || "\u0000".equals(str)) {
+        if (null == str || str.isEmpty() || "null".equals(str) || "\u0000".equals(str)) {
             return true;
-        } else if ("".equals(str.trim())) {
-            return true;
-        }
-        return false;
+        } else return str.trim().isEmpty();
     }
 
     public static String getRandomNumber(Integer length) {
@@ -117,6 +115,39 @@ public class StringTools {
      */
     public static Boolean isNotNull(String s) {
         return s != null && !s.isEmpty();
+    }
+
+    public static boolean pathIsOk(String path) {
+        if (StringTools.isEmpty(path)) {
+            return true;
+        }
+        if (path.contains("../") || path.contains("..\\")) {
+            return false;
+        }
+        return true;
+    }
+
+    public static String rename(String file) {
+        String fileName = getFileName(file);
+        String suffix = getFileSuffix(file);
+        String randomNumber = getRandomNumber(DateConstants.LENGTH_5);
+        return fileName + "_" + randomNumber + suffix;
+    }
+
+    public static String getFileName(String file) {
+        int lastIndex = file.lastIndexOf(".");
+        if (lastIndex < 0) {
+            return file;
+        }
+        return file.substring(0, lastIndex);
+    }
+
+    public static String getFileSuffix(String file) {
+        int lastIndex = file.lastIndexOf(".");
+        if (lastIndex < 0) {
+            return "";
+        }
+        return file.substring(lastIndex);
     }
 
 }

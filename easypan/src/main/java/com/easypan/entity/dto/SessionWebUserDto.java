@@ -2,6 +2,8 @@ package com.easypan.entity.dto;
 
 
 import lombok.Data;
+import java.io.Serializable;
+
 
 /**
  * @className SessionWebUserDto
@@ -10,7 +12,7 @@ import lombok.Data;
  * @date 2024/05/15
 **/
 @Data
-public class SessionWebUserDto {
+public class SessionWebUserDto implements Serializable {
     private String nickName;
     private String userId;
     private Boolean isAdmin;

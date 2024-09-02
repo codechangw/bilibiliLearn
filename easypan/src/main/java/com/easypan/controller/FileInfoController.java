@@ -1,84 +1,70 @@
 package com.easypan.controller;
 
-import java.util.List;
 
-import com.easypan.entity.query.FileInfoQuery;
+import com.easypan.annotation.GlobalInterceptor;
+import com.easypan.annotation.VerifyParam;
+import com.easypan.component.redis.RedisUtils;
+import com.easypan.entity.dto.SessionWebUserDto;
+import com.easypan.entity.dto.UploadResultDto;
+import com.easypan.entity.enums.FileCategoryEnum;
+import com.easypan.entity.enums.FileDelFlagEnum;
 import com.easypan.entity.po.FileInfo;
+import com.easypan.entity.query.FileInfoQuery;
+import com.easypan.entity.vo.FileInfoVO;
+import com.easypan.entity.vo.PaginationResultVO;
 import com.easypan.entity.vo.ResponseVO;
 import com.easypan.service.FileInfoService;
-import org.springframework.web.bind.annotation.RequestBody;
+import com.easypan.utils.StringTools;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * 文件信息 Controller
  */
 @RestController("fileInfoController")
-@RequestMapping("/fileInfo")
-public class FileInfoController extends ABaseController{
+@RequestMapping("/file")
+public class FileInfoController extends ABaseController {
 
-	@Resource
-	private FileInfoService fileInfoService;
-	/**
-	 * 根据条件分页查询
-	 */
-	@RequestMapping("/loadDataList")
-	public ResponseVO loadDataList(FileInfoQuery query){
-		return getSuccessResponseVO(fileInfoService.findListByPage(query));
-	}
+    @Resource
+    private RedisUtils redisUtils;
+    @Resource
+    private FileInfoService fileInfoService;
 
-	/**
-	 * 新增
-	 */
-	@RequestMapping("/add")
-	public ResponseVO add(FileInfo bean) {
-		fileInfoService.add(bean);
-		return getSuccessResponseVO(null);
-	}
+    /**
+     * 根据条件分页查询
+     */
+    @RequestMapping("/loadDataList")
+    @GlobalInterceptor
+    public ResponseVO loadDataList(HttpSession session, FileInfoQuery query, String category) {
+        FileCategoryEnum categoryEnum = FileCategoryEnum.getByCode(category);
+        if (StringTools.isNotNull(category)) {
+            query.setFileCategory(categoryEnum.getCategory());
+        }
+        query.setUserId(getUserInfoFromSession(session).getUserId());
 
-	/**
-	 * 批量新增
-	 */
-	@RequestMapping("/addBatch")
-	public ResponseVO addBatch(@RequestBody List<FileInfo> listBean) {
-		fileInfoService.addBatch(listBean);
-		return getSuccessResponseVO(null);
-	}
+        query.setOrderBy("last_update_time desc");
+        query.setDelFlag(FileDelFlagEnum.USING.getFlag());
+        PaginationResultVO<FileInfo> result = fileInfoService.findListByPage(query);
+        //  转换
+        return getSuccessResponseVO(convert2PaginationVO(result, FileInfoVO.class));
+    }
 
-	/**
-	 * 批量新增/修改
-	 */
-	@RequestMapping("/addOrUpdateBatch")
-	public ResponseVO addOrUpdateBatch(@RequestBody List<FileInfo> listBean) {
-		fileInfoService.addBatch(listBean);
-		return getSuccessResponseVO(null);
-	}
+    @RequestMapping("/uploadFile")
+    @GlobalInterceptor
+    public ResponseVO uploadFile(HttpSession session, String fileId, MultipartFile file,
+                                 @VerifyParam String fileName,
+                                 @VerifyParam String filePid,
+                                 @VerifyParam String fileMd5,
+                                 @VerifyParam Integer chunkIndex,
+                                 @VerifyParam Integer chunks) {
+        SessionWebUserDto userInfoFromSession = getUserInfoFromSession(session);
+        UploadResultDto uploadResultDto = fileInfoService.uploadFile(userInfoFromSession, fileId, file, fileName, filePid, fileMd5, chunkIndex, chunks);
+        return getSuccessResponseVO(uploadResultDto);
+    }
 
-	/**
-	 * 根据FileIdAndUserId查询对象
-	 */
-	@RequestMapping("/getFileInfoByFileIdAndUserId")
-	public ResponseVO getFileInfoByFileIdAndUserId(String fileId,String userId) {
-		return getSuccessResponseVO(fileInfoService.getFileInfoByFileIdAndUserId(fileId,userId));
-	}
-
-	/**
-	 * 根据FileIdAndUserId修改对象
-	 */
-	@RequestMapping("/updateFileInfoByFileIdAndUserId")
-	public ResponseVO updateFileInfoByFileIdAndUserId(FileInfo bean,String fileId,String userId) {
-		fileInfoService.updateFileInfoByFileIdAndUserId(bean,fileId,userId);
-		return getSuccessResponseVO(null);
-	}
-
-	/**
-	 * 根据FileIdAndUserId删除
-	 */
-	@RequestMapping("/deleteFileInfoByFileIdAndUserId")
-	public ResponseVO deleteFileInfoByFileIdAndUserId(String fileId,String userId) {
-		fileInfoService.deleteFileInfoByFileIdAndUserId(fileId,userId);
-		return getSuccessResponseVO(null);
-	}
 }

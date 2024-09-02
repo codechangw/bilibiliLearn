@@ -1,4 +1,4 @@
-package com.easypan.entity.config;
+package com.easypan.config;
 
 
 import lombok.Getter;
