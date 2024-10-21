@@ -64,11 +64,11 @@ public class RedisComponent {
      * 临时空间增加文件使用大小
      * @param userId
      * @param fileId
-     * @param fileSize  增加的文件大小
+     * @param addFileSize  增加的文件大小
      */
-    public void setFileTempSize(String userId, String fileId, Long fileSize) {
+    public void setFileTempSize(String userId, String fileId, Long addFileSize) {
         Long fileTempSize = this.getFileTempSize(userId, fileId);
-        redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_USER_TEMP_SIZE, userId, fileId), fileTempSize + fileSize, DateConstants.SECOND_HOUR);
+        redisUtils.set(StringTools.redisKeyJointH(RedisKeyConstants.REDIS_KEY_USER_TEMP_SIZE, userId, fileId), fileTempSize + addFileSize, DateConstants.SECOND_HOUR);
     }
 
     /**
