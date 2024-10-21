@@ -61,12 +61,10 @@ public interface FileInfoService {
      */
     FileInfo getFileInfoByFileIdAndUserId(String fileId, String userId);
 
-
     /**
      * 根据FileIdAndUserId修改
      */
     Integer updateFileInfoByFileIdAndUserId(FileInfo bean, String fileId, String userId);
-
 
     /**
      * 根据FileIdAndUserId删除

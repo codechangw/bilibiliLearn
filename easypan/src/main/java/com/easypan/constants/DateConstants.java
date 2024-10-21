@@ -39,6 +39,13 @@ public class DateConstants {
     public static final Integer HOUR_12 = 12;
     public static final Integer HOUR_DAY = 24;
     /* 时间 结束*/
+    /* 内存单位 */
+    public static final Long B = 1L;
+    public static final Long KB_B = 1024L;
+    public static final Long MB_B = 1024 * 1024L;
+    public static final Long GB_B = 1024 * 1024 * 1024L;
+    public static final Long TB_B = 1024 * 1024 * 1024 * 1024L;
+
 }
 
 
